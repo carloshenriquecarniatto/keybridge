@@ -325,9 +325,16 @@ let agentCallback: CGEventTapCallBack = { _, type, event, _ in
     if isPostingSynthetic { return Unmanaged.passUnretained(event) }
 
     // Modificadores (shift/ctrl/cmd) pressionados enquanto a macro está segurada
-    // também recebem a flag fn, para combos como Globe+Shift+Seta funcionarem.
+    // também recebem a flag fn — e também disparam a síntese do Globe, para que
+    // o estado global Globe já esteja ativo antes da seta chegar (tiling).
     if type == .flagsChanged {
         if agentState.heldGlobeKey != nil {
+            agentState.sawOtherKeyWhileHeld = true
+            if !agentState.globeSynthesized {
+                agentState.globeSynthesized = true
+                postGlobeState(down: true)
+                log("Globe sintetizado ↓ (modificador detectado)")
+            }
             event.flags = CGEventFlags(rawValue: event.flags.rawValue | CGEventFlags.maskSecondaryFn.rawValue)
         }
         return Unmanaged.passUnretained(event)
