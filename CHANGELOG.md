@@ -1,3 +1,9 @@
+## [1.3.0](https://github.com/carloshenriquecarniatto/keybridge/compare/v1.2.0...v1.3.0) (2026-10-13)
+
+### Features
+
+* hybrid tiling, refined UI, and permission-free key capture ([0275e93](https://github.com/carloshenriquecarniatto/keybridge/commit/0275e9358cbdcf036db6e6b3a5f6c0d45f7a4b32))
+
 ## [1.2.0](https://github.com/carloshenriquecarniatto/keybridge/compare/v1.1.3...v1.2.0) (2026-10-13)
 
 ### Features
