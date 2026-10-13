@@ -1,3 +1,9 @@
+## [1.1.1](https://github.com/carloshenriquecarniatto/keybridge/compare/v1.1.0...v1.1.1) (2026-10-13)
+
+### Bug Fixes
+
+* harden agent against stuck fn state and event tap overhead ([c302cb1](https://github.com/carloshenriquecarniatto/keybridge/commit/c302cb1ce3c1bd77e1110e47a8598a76993732a0))
+
 ## [1.1.0](https://github.com/carloshenriquecarniatto/keybridge/compare/v1.0.0...v1.1.0) (2026-10-13)
 
 ### Features
