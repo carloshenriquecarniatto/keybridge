@@ -1,0 +1,8 @@
+.DS_Store
+/build/
+*.app
+*.dSYM
+*.xcarchive
+.env
+node_modules/
+npm-debug.log*
