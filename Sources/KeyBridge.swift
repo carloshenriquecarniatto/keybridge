@@ -262,6 +262,26 @@ func postKey(_ virtualKey: CGKeyCode, flags: CGEventFlags = []) {
 func postEmoji() { postKey(49, flags: [.maskControl, .maskCommand]) } // Ctrl+Cmd+Space
 func postInputSource() { postKey(49, flags: [.maskControl]) } // Ctrl+Space
 
+// Sintetiza press/release da tecla Globe (kVK_Function, keycode 63).
+// Marcar apenas a flag nos eventos não basta: os atalhos de tiling do macOS
+// (Globe+Ctrl+Seta) consultam o estado global do modificador Globe.
+func postGlobeState(down: Bool) {
+    isPostingSynthetic = true
+    defer { isPostingSynthetic = false }
+    if let e = CGEvent(keyboardEventSource: nil, virtualKey: 63, keyDown: down) {
+        e.type = .flagsChanged
+        e.flags = down ? CGEventFlags.maskSecondaryFn : []
+        e.post(tap: .cghidEventTap)
+    }
+}
+
+func releaseSyntheticGlobe() {
+    guard agentState.globeSynthesized else { return }
+    agentState.globeSynthesized = false
+    postGlobeState(down: false)
+    log("Globe sintetizado ↑")
+}
+
 func typeName(_ t: CGEventType) -> String {
     switch t {
     case .keyDown: return "keyDown"
@@ -278,6 +298,8 @@ final class AgentState {
     var heldGlobeKey: Int64? = nil
     var holdStart: Date? = nil
     var sawOtherKeyWhileHeld = false
+    var globeSynthesized = false
+    var loggedFirstFlaggedKey = false
     var lastConfigLoad = Date.distantPast
     var lastConfigCheck = Date.distantPast
 
@@ -321,6 +343,7 @@ let agentCallback: CGEventTapCallBack = { _, type, event, _ in
     // como se fn estivesse segurado (setas tileiam janelas, letras viram símbolos).
     if agentState.heldGlobeKey != nil, keycode != agentState.heldGlobeKey,
        let start = agentState.holdStart, Date().timeIntervalSince(start) > 20 {
+        releaseSyntheticGlobe()
         agentState.heldGlobeKey = nil
         agentState.holdStart = nil
         agentState.sawOtherKeyWhileHeld = false
@@ -330,8 +353,17 @@ let agentCallback: CGEventTapCallBack = { _, type, event, _ in
 
     if let held = agentState.heldGlobeKey, keycode != held {
         agentState.sawOtherKeyWhileHeld = true
+        if !agentState.globeSynthesized {
+            agentState.globeSynthesized = true
+            postGlobeState(down: true)
+            log("Globe sintetizado ↓ (combo detectado)")
+        }
+        if !agentState.loggedFirstFlaggedKey {
+            agentState.loggedFirstFlaggedKey = true
+            log("fn aplicado a key=\(keycode) (primeira do combo)")
+        }
         event.flags = CGEventFlags(rawValue: event.flags.rawValue | CGEventFlags.maskSecondaryFn.rawValue)
-        return Unmanaged.passUnretained(event) // sem log por evento (auto-repeat gera muitos)
+        return Unmanaged.passUnretained(event)
     }
 
     guard let mapping = agentState.mappingsByKeyCode[keycode], mapping.action != .disabled else {
@@ -350,9 +382,11 @@ let agentCallback: CGEventTapCallBack = { _, type, event, _ in
             return nil // consome (inclui auto-repeats, silenciosos)
         } else {
             let wasTap = (agentState.heldGlobeKey == keycode) && !agentState.sawOtherKeyWhileHeld
+            releaseSyntheticGlobe()
             agentState.heldGlobeKey = nil
             agentState.holdStart = nil
             agentState.sawOtherKeyWhileHeld = false
+            agentState.loggedFirstFlaggedKey = false
             if wasTap {
                 log("\(mapping.name) toque → emoji")
                 DispatchQueue.global(qos: .userInitiated).async { postEmoji() }
