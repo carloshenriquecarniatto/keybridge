@@ -1,3 +1,9 @@
+## [1.1.2](https://github.com/carloshenriquecarniatto/keybridge/compare/v1.1.1...v1.1.2) (2026-10-13)
+
+### Bug Fixes
+
+* synthesize real Globe press for window tiling shortcuts ([402e9b5](https://github.com/carloshenriquecarniatto/keybridge/commit/402e9b55bb7b6c2ba22a6cf6af3c358e9f8d4eb9))
+
 ## [1.1.1](https://github.com/carloshenriquecarniatto/keybridge/compare/v1.1.0...v1.1.1) (2026-10-13)
 
 ### Bug Fixes
