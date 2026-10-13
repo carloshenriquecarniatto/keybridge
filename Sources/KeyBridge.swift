@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import ApplicationServices
 
 // MARK: - Shared model
 
@@ -23,6 +24,14 @@ let strings: [String: [String: String]] = [
         "action.globeFn.subtitle": "Tap opens emoji; hold adds fn",
         "action.emoji.subtitle": "Opens Emoji & Symbols",
         "action.inputSource.subtitle": "Sends Ctrl+Space",
+        "action.tileLeft.title": "Left",
++        "action.tileLeft.subtitle": "Moves the front window to the left half",
++        "action.tileRight.title": "Right",
++        "action.tileRight.subtitle": "Moves the front window to the right half",
++        "action.tileFill.title": "Fill",
++        "action.tileFill.subtitle": "Fills the screen with the front window",
++        "action.tileCenter.title": "Center",
++        "action.tileCenter.subtitle": "Centers the front window",
         "action.disabled.subtitle": "Ignores this key",
         "field.name": "Name",
         "field.action": "Action",
@@ -60,6 +69,14 @@ let strings: [String: [String: String]] = [
         "action.globeFn.subtitle": "Tocar abre emoji; mantener añade fn",
         "action.emoji.subtitle": "Abre Emoji y símbolos",
         "action.inputSource.subtitle": "Envía Ctrl+Espacio",
+        "action.tileLeft.title": "Izquierda",
+        "action.tileLeft.subtitle": "Mueve la ventana a la mitad izquierda",
+        "action.tileRight.title": "Derecha",
+        "action.tileRight.subtitle": "Mueve la ventana a la mitad derecha",
+        "action.tileFill.title": "Llenar",
+        "action.tileFill.subtitle": "Ocupa la pantalla con la ventana",
+        "action.tileCenter.title": "Centrar",
+        "action.tileCenter.subtitle": "Centra la ventana",
         "action.disabled.subtitle": "Ignora esta tecla",
         "field.name": "Nombre",
         "field.action": "Acción",
@@ -97,6 +114,14 @@ let strings: [String: [String: String]] = [
         "action.globeFn.subtitle": "Toque abre emoji; segurar adiciona fn",
         "action.emoji.subtitle": "Abre Emoji & Símbolos",
         "action.inputSource.subtitle": "Envia Ctrl+Espaço",
+        "action.tileLeft.title": "Esquerda",
+        "action.tileLeft.subtitle": "Move a janela para a metade esquerda",
+        "action.tileRight.title": "Direita",
+        "action.tileRight.subtitle": "Move a janela para a metade direita",
+        "action.tileFill.title": "Preencher",
+        "action.tileFill.subtitle": "Ocupa a tela com a janela",
+        "action.tileCenter.title": "Centralizar",
+        "action.tileCenter.subtitle": "Centraliza a janela",
         "action.disabled.subtitle": "Ignora esta tecla",
         "field.name": "Nome",
         "field.action": "Ação",
@@ -140,6 +165,10 @@ enum KeyAction: String, Codable, CaseIterable, Identifiable {
     case globeFn
     case emoji
     case inputSource
+    case tileLeft
+    case tileRight
+    case tileFill
+    case tileCenter
     case disabled
 
     var id: String { rawValue }
@@ -148,6 +177,10 @@ enum KeyAction: String, Codable, CaseIterable, Identifiable {
         case .globeFn: return tr("action.globeFn.title")
         case .emoji: return tr("action.emoji.title")
         case .inputSource: return tr("action.inputSource.title")
+        case .tileLeft: return tr("action.tileLeft.title")
+        case .tileRight: return tr("action.tileRight.title")
+        case .tileFill: return tr("action.tileFill.title")
+        case .tileCenter: return tr("action.tileCenter.title")
         case .disabled: return tr("action.disabled.title")
         }
     }
@@ -156,6 +189,10 @@ enum KeyAction: String, Codable, CaseIterable, Identifiable {
         case .globeFn: return tr("action.globeFn.subtitle")
         case .emoji: return tr("action.emoji.subtitle")
         case .inputSource: return tr("action.inputSource.subtitle")
+        case .tileLeft: return tr("action.tileLeft.subtitle")
+        case .tileRight: return tr("action.tileRight.subtitle")
+        case .tileFill: return tr("action.tileFill.subtitle")
+        case .tileCenter: return tr("action.tileCenter.subtitle")
         case .disabled: return tr("action.disabled.subtitle")
         }
     }
@@ -164,6 +201,10 @@ enum KeyAction: String, Codable, CaseIterable, Identifiable {
         case .globeFn: return "globe"
         case .emoji: return "face.smiling"
         case .inputSource: return "character.cursor.ibeam"
+        case .tileLeft: return "arrow.left.square"
+        case .tileRight: return "arrow.right.square"
+        case .tileFill: return "square.fill"
+        case .tileCenter: return "crosshair"
         case .disabled: return "slash.circle"
         }
     }
@@ -280,6 +321,57 @@ func releaseSyntheticGlobe() {
     agentState.globeSynthesized = false
     postGlobeState(down: false)
     log("Globe sintetizado ↑")
+}
+
+// MARK: - Window tiling nativo (via Accessibility)
+//
+// No macOS 27, os atalhos de sistema de tiling (symbolic hotkeys) não são
+// acionados por eventos sintéticos de Globe — exigem o estado de hardware.
+// Então o KeyBridge move/redimensiona a janela diretamente via AX API.
+
+enum TileMode { case left, right, fill, center }
+
+enum WindowTiler {
+    static func apply(_ mode: TileMode) -> Bool {
+        guard let app = NSWorkspace.shared.frontmostApplication else { return false }
+        let appEl = AXUIElementCreateApplication(app.processIdentifier)
+        var windowRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(appEl, kAXFocusedWindowAttribute as CFString, &windowRef, nil) == .success,
+              let window = windowRef else { return false }
+        let axWindow = window as! AXUIElement
+
+        guard let screen = NSScreen.main else { return false }
+        let frame = screen.visibleFrame
+
+        var target: CGRect
+        if mode == .center {
+            var pos = CGPoint()
+            var size = CGSize()
+            var posRef: CFTypeRef?
+            var sizeRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(axWindow, kAXPositionAttribute as CFString, &posRef, nil) == .success,
+                  AXUIElementCopyAttributeValue(axWindow, kAXSizeAttribute as CFString, &sizeRef, nil) == .success,
+                  let p = posRef, let s = sizeRef else { return false }
+            AXValueGetValue(p as! AXValue, .cgPoint, &pos)
+            AXValueGetValue(s as! AXValue, .cgSize, &size)
+            target = CGRect(x: frame.midX - size.width / 2, y: frame.midY - size.height / 2,
+                            width: size.width, height: size.height)
+        } else {
+            switch mode {
+            case .left: target = CGRect(x: frame.minX, y: frame.minY, width: frame.width / 2, height: frame.height)
+            case .right: target = CGRect(x: frame.midX, y: frame.minY, width: frame.width / 2, height: frame.height)
+            default: target = frame
+            }
+        }
+
+        // AX usa origem no topo-esquerda; Cocoa usa base-esquerda.
+        var pt = CGPoint(x: target.minX, y: NSScreen.screens[0].frame.height - target.maxY)
+        var sz = CGSize(width: target.width, height: target.height)
+        guard let posVal = AXValueCreate(.cgPoint, &pt), let sizeVal = AXValueCreate(.cgSize, &sz) else { return false }
+        AXUIElementSetAttributeValue(axWindow, kAXSizeAttribute as CFString, sizeVal)
+        AXUIElementSetAttributeValue(axWindow, kAXPositionAttribute as CFString, posVal)
+        return true
+    }
 }
 
 func typeName(_ t: CGEventType) -> String {
@@ -410,6 +502,22 @@ let agentCallback: CGEventTapCallBack = { _, type, event, _ in
         if type == .keyUp {
             log("\(mapping.name) → trocar idioma")
             DispatchQueue.global(qos: .userInitiated).async { postInputSource() }
+        }
+        return nil
+    case .tileLeft, .tileRight, .tileFill, .tileCenter:
+        if type == .keyUp {
+            let mode: TileMode
+            switch mapping.action {
+            case .tileLeft: mode = .left
+            case .tileRight: mode = .right
+            case .tileFill: mode = .fill
+            default: mode = .center
+            }
+            log("\(mapping.name) → \(mapping.action.title)")
+            DispatchQueue.global(qos: .userInitiated).async {
+                let ok = WindowTiler.apply(mode)
+                if !ok { log("tiling falhou (sem janela focada ou app sem suporte AX)") }
+            }
         }
         return nil
     case .disabled:
@@ -569,7 +677,7 @@ struct MappingRow: View {
                         Text(action.title).tag(action)
                     }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
                 Text(mapping.action.subtitle).font(.caption).foregroundStyle(.secondary)
             }
             Toggle("", isOn: $mapping.enabled).labelsHidden()
