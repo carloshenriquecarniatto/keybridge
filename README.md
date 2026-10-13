@@ -223,3 +223,44 @@ The long-term idea is to make Logitech G-key workflows on macOS easier, more nat
 
 MIT
 
+## Releases
+
+KeyBridge uses [semantic-release](https://semantic-release.gitbook.io/) with Conventional Commits.
+
+When commits are pushed to `main`, GitHub Actions will:
+
+1. build `KeyBridge.app`;
+2. package it as `build/KeyBridge.zip`;
+3. analyze Conventional Commit messages;
+4. create a semantic version tag such as `v0.2.0`;
+5. generate GitHub release notes;
+6. upload the app zip to the GitHub Release;
+7. update `CHANGELOG.md`.
+
+### Commit examples
+
+```text
+fix: avoid beep when consuming mapped macro key
+feat: add custom shortcut action
+chore: update icon assets
+docs: explain G HUB setup
+```
+
+Release impact:
+
+- `fix:` → patch release
+- `feat:` → minor release
+- `feat!:` or `BREAKING CHANGE:` → major release
+- `docs:`, `chore:`, `refactor:` → no release by default
+
+### First release
+
+The first automated release will happen after a release-triggering commit is pushed to `main`, for example:
+
+```bash
+git commit -m "feat: add initial KeyBridge MVP"
+```
+
+### Note about release binaries
+
+Current GitHub Release artifacts are ad-hoc signed and not notarized. They are useful for early testing, but users may still see Gatekeeper warnings. A smoother public distribution will require Developer ID signing and Apple notarization.
