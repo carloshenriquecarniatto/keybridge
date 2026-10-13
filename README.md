@@ -53,6 +53,16 @@ The current prototype supports:
 
 More actions are planned.
 
+## Languages
+
+KeyBridge currently supports:
+
+- English
+- Spanish
+- Portuguese
+
+The app automatically follows the preferred language configured in macOS. If the current language is not supported yet, KeyBridge falls back to English.
+
 ## Supported keyboards
 
 KeyBridge is not limited to Logitech.

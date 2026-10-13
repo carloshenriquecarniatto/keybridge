@@ -10,6 +10,132 @@ let configPath = configDir + "/mappings.json"
 let logPath = NSString(string: "~/Library/Logs/keybridge.log").expandingTildeInPath
 let agentPlistPath = NSString(string: "~/Library/LaunchAgents/local.keybridge.agent.plist").expandingTildeInPath
 
+// MARK: - Localization
+
+let preferredLanguage = Locale.preferredLanguages.first?.split(separator: "-").first.map(String.init) ?? "en"
+
+let strings: [String: [String: String]] = [
+    "en": [
+        "action.globeFn.title": "Globe/fn",
+        "action.emoji.title": "Emoji",
+        "action.inputSource.title": "Input Source",
+        "action.disabled.title": "Disabled",
+        "action.globeFn.subtitle": "Tap opens emoji; hold adds fn",
+        "action.emoji.subtitle": "Opens Emoji & Symbols",
+        "action.inputSource.subtitle": "Sends Ctrl+Space",
+        "action.disabled.subtitle": "Ignores this key",
+        "field.name": "Name",
+        "field.action": "Action",
+        "menu.capture": "Capture next key",
+        "menu.remove": "Remove",
+        "tag.agentInstalled": "Agent at login",
+        "tag.agentNotInstalled": "Agent not installed",
+        "subtitle": "Map special keys from any keyboard to native macOS actions",
+        "guide.title": "How to use",
+        "guide.body": "In your keyboard software (G HUB, Synapse, iCUE, VIA, OpenLogi, etc.), configure each macro/G-key to send a rare key such as F13–F24. Then use “Capture next key” here and choose the action.",
+        "button.permissions": "Open permissions",
+        "button.configFolder": "Open config folder",
+        "section.mappings": "Mappings",
+        "button.add": "Add",
+        "section.agent": "Agent",
+        "agent.body": "The agent is small and only listens for the keys you configure. It replaces the need to use Karabiner for this simple case.",
+        "button.install": "Install at login",
+        "button.reinstall": "Reinstall at login",
+        "button.restart": "Restart agent",
+        "button.removeAgent": "Remove agent",
+        "message.agentInstalled": "Agent installed.",
+        "message.agentInstallFailed": "Failed to install agent.",
+        "message.agentRestarted": "Agent restarted.",
+        "message.agentRemoved": "Agent removed.",
+        "mapping.new": "New key",
+        "message.capturePrompt": "Press the key you want to capture…",
+        "message.captured": "Captured key: keycode %@.",
+        "message.captureFailed": "Could not capture. Check Device Control/Data Access and Input Monitoring.",
+    ],
+    "es": [
+        "action.globeFn.title": "Globo/fn",
+        "action.emoji.title": "Emoji",
+        "action.inputSource.title": "Cambiar idioma",
+        "action.disabled.title": "Desactivado",
+        "action.globeFn.subtitle": "Tocar abre emoji; mantener añade fn",
+        "action.emoji.subtitle": "Abre Emoji y símbolos",
+        "action.inputSource.subtitle": "Envía Ctrl+Espacio",
+        "action.disabled.subtitle": "Ignora esta tecla",
+        "field.name": "Nombre",
+        "field.action": "Acción",
+        "menu.capture": "Capturar siguiente tecla",
+        "menu.remove": "Eliminar",
+        "tag.agentInstalled": "Agente al iniciar sesión",
+        "tag.agentNotInstalled": "Agente no instalado",
+        "subtitle": "Mapea teclas especiales de cualquier teclado a acciones nativas de macOS",
+        "guide.title": "Cómo usar",
+        "guide.body": "En el software de tu teclado (G HUB, Synapse, iCUE, VIA, OpenLogi, etc.), configura cada macro/G-key para enviar una tecla poco usada como F13–F24. Después usa “Capturar siguiente tecla” aquí y elige la acción.",
+        "button.permissions": "Abrir permisos",
+        "button.configFolder": "Abrir carpeta de configuración",
+        "section.mappings": "Mapeos",
+        "button.add": "Añadir",
+        "section.agent": "Agente",
+        "agent.body": "El agente es pequeño y solo escucha las teclas que configures. Sustituye la necesidad de usar Karabiner para este caso simple.",
+        "button.install": "Instalar al iniciar sesión",
+        "button.reinstall": "Reinstalar al iniciar sesión",
+        "button.restart": "Reiniciar agente",
+        "button.removeAgent": "Eliminar agente",
+        "message.agentInstalled": "Agente instalado.",
+        "message.agentInstallFailed": "No se pudo instalar el agente.",
+        "message.agentRestarted": "Agente reiniciado.",
+        "message.agentRemoved": "Agente eliminado.",
+        "mapping.new": "Nueva tecla",
+        "message.capturePrompt": "Pulsa la tecla que quieres capturar…",
+        "message.captured": "Tecla capturada: keycode %@.",
+        "message.captureFailed": "No se pudo capturar. Revisa Device Control/Data Access e Input Monitoring.",
+    ],
+    "pt": [
+        "action.globeFn.title": "Globo/fn",
+        "action.emoji.title": "Emoji",
+        "action.inputSource.title": "Trocar idioma",
+        "action.disabled.title": "Desligado",
+        "action.globeFn.subtitle": "Toque abre emoji; segurar adiciona fn",
+        "action.emoji.subtitle": "Abre Emoji & Símbolos",
+        "action.inputSource.subtitle": "Envia Ctrl+Espaço",
+        "action.disabled.subtitle": "Ignora esta tecla",
+        "field.name": "Nome",
+        "field.action": "Ação",
+        "menu.capture": "Capturar próxima tecla",
+        "menu.remove": "Remover",
+        "tag.agentInstalled": "Agente no login",
+        "tag.agentNotInstalled": "Agente não instalado",
+        "subtitle": "Mapeie teclas especiais de qualquer teclado para ações nativas do macOS",
+        "guide.title": "Como usar",
+        "guide.body": "No software do seu teclado (G HUB, Synapse, iCUE, VIA, OpenLogi etc.), configure cada macro/G-key para enviar uma tecla rara, como F13–F24. Depois use “Capturar próxima tecla” aqui e escolha a ação.",
+        "button.permissions": "Abrir permissões",
+        "button.configFolder": "Abrir pasta de configuração",
+        "section.mappings": "Mapeamentos",
+        "button.add": "Adicionar",
+        "section.agent": "Agente",
+        "agent.body": "O agente é pequeno e só fica ouvindo as teclas que você configurou. Ele substitui a necessidade de usar Karabiner para este caso simples.",
+        "button.install": "Instalar no login",
+        "button.reinstall": "Reinstalar no login",
+        "button.restart": "Reiniciar agente",
+        "button.removeAgent": "Remover agente",
+        "message.agentInstalled": "Agente instalado.",
+        "message.agentInstallFailed": "Falha ao instalar agente.",
+        "message.agentRestarted": "Agente reiniciado.",
+        "message.agentRemoved": "Agente removido.",
+        "mapping.new": "Nova tecla",
+        "message.capturePrompt": "Aperte a tecla que deseja capturar…",
+        "message.captured": "Tecla capturada: keycode %@.",
+        "message.captureFailed": "Não consegui capturar. Confira Device Control/Data Access e Input Monitoring.",
+    ],
+]
+
+func tr(_ key: String) -> String {
+    strings[preferredLanguage]?[key] ?? strings["en"]?[key] ?? key
+}
+
+func trf(_ key: String, _ args: CVarArg...) -> String {
+    String(format: tr(key), arguments: args)
+}
+
 enum KeyAction: String, Codable, CaseIterable, Identifiable {
     case globeFn
     case emoji
@@ -19,18 +145,18 @@ enum KeyAction: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .globeFn: return "Globo/fn"
-        case .emoji: return "Emoji"
-        case .inputSource: return "Trocar idioma"
-        case .disabled: return "Desligado"
+        case .globeFn: return tr("action.globeFn.title")
+        case .emoji: return tr("action.emoji.title")
+        case .inputSource: return tr("action.inputSource.title")
+        case .disabled: return tr("action.disabled.title")
         }
     }
     var subtitle: String {
         switch self {
-        case .globeFn: return "Toque abre emoji; segurar adiciona fn"
-        case .emoji: return "Abre Emoji & Símbolos"
-        case .inputSource: return "Envia Ctrl+Espaço"
-        case .disabled: return "Ignora esta tecla"
+        case .globeFn: return tr("action.globeFn.subtitle")
+        case .emoji: return tr("action.emoji.subtitle")
+        case .inputSource: return tr("action.inputSource.subtitle")
+        case .disabled: return tr("action.disabled.subtitle")
         }
     }
     var symbol: String {
@@ -350,7 +476,7 @@ struct MappingRow: View {
                 .foregroundStyle(.blue)
             VStack(alignment: .leading, spacing: 5) {
                 HStack {
-                    TextField("Nome", text: $mapping.name)
+                    TextField(tr("field.name"), text: $mapping.name)
                         .font(.headline)
                         .textFieldStyle(.plain)
                     Text("code \(mapping.keyCode)")
@@ -360,7 +486,7 @@ struct MappingRow: View {
                         .padding(.vertical, 3)
                         .background(.quaternary, in: Capsule())
                 }
-                Picker("Ação", selection: $mapping.action) {
+                Picker(tr("field.action"), selection: $mapping.action) {
                     ForEach(KeyAction.allCases) { action in
                         Text(action.title).tag(action)
                     }
@@ -370,9 +496,9 @@ struct MappingRow: View {
             }
             Toggle("", isOn: $mapping.enabled).labelsHidden()
             Menu {
-                Button("Capturar próxima tecla", action: onCapture)
+                Button(tr("menu.capture"), action: onCapture)
                 Divider()
-                Button("Remover", role: .destructive, action: onDelete)
+                Button(tr("menu.remove"), role: .destructive, action: onDelete)
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
@@ -414,11 +540,11 @@ struct ContentView: View {
             }
             VStack(alignment: .leading) {
                 Text("KeyBridge").font(.largeTitle.bold())
-                Text("Mapeie teclas especiais de qualquer teclado para ações nativas do macOS")
+                Text(tr("subtitle"))
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Pill(ok: installed, text: installed ? "Agente no login" : "Agente não instalado")
+            Pill(ok: installed, text: installed ? tr("tag.agentInstalled") : tr("tag.agentNotInstalled"))
         }
         .padding(22)
         .background(.bar)
@@ -427,13 +553,13 @@ struct ContentView: View {
     var setupGuide: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 10) {
-                Label("Como usar", systemImage: "wand.and.stars")
+                Label(tr("guide.title"), systemImage: "wand.and.stars")
                     .font(.headline)
-                Text("No software do seu teclado (G HUB, Synapse, iCUE, VIA, OpenLogi etc.), configure cada macro/G-key para enviar uma tecla rara, como F13–F24. Depois use “Capturar próxima tecla” aqui e escolha a ação.")
+                Text(tr("guide.body"))
                     .foregroundStyle(.secondary)
                 HStack {
-                    Button("Abrir permissões") { openPermissions() }
-                    Button("Abrir pasta de configuração") { NSWorkspace.shared.open(URL(fileURLWithPath: configDir)) }
+                    Button(tr("button.permissions")) { openPermissions() }
+                    Button(tr("button.configFolder")) { NSWorkspace.shared.open(URL(fileURLWithPath: configDir)) }
                     Spacer()
                 }
             }.padding(8)
@@ -443,9 +569,9 @@ struct ContentView: View {
     var mappingsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Mapeamentos").font(.title2.bold())
+                Text(tr("section.mappings")).font(.title2.bold())
                 Spacer()
-                Button { addMapping() } label: { Label("Adicionar", systemImage: "plus") }
+                Button { addMapping() } label: { Label(tr("button.add"), systemImage: "plus") }
             }
             ForEach($config.mappings) { $mapping in
                 MappingRow(mapping: $mapping, onCapture: { capture(mapping.id) }, onDelete: { delete(mapping.id) })
@@ -456,15 +582,15 @@ struct ContentView: View {
     var agentSection: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 12) {
-                Label("Agente", systemImage: "bolt.horizontal.circle").font(.headline)
-                Text("O agente é pequeno e só fica ouvindo as teclas que você configurou. Ele substitui a necessidade de usar Karabiner para este caso simples.")
+                Label(tr("section.agent"), systemImage: "bolt.horizontal.circle").font(.headline)
+                Text(tr("agent.body"))
                     .foregroundStyle(.secondary)
                 HStack {
-                    Button(installed ? "Reinstalar no login" : "Instalar no login") {
-                        installed = installAgent(); message = installed ? "Agente instalado." : "Falha ao instalar agente."
+                    Button(installed ? tr("button.reinstall") : tr("button.install")) {
+                        installed = installAgent(); message = installed ? tr("message.agentInstalled") : tr("message.agentInstallFailed")
                     }
-                    Button("Reiniciar agente") { restartAgent(); message = "Agente reiniciado." }
-                    Button("Remover agente") { uninstallAgent(); installed = false; message = "Agente removido." }
+                    Button(tr("button.restart")) { restartAgent(); message = tr("message.agentRestarted") }
+                    Button(tr("button.removeAgent")) { uninstallAgent(); installed = false; message = tr("message.agentRemoved") }
                     Spacer()
                 }
                 if !message.isEmpty { Text(message).font(.caption).foregroundStyle(.secondary) }
@@ -477,7 +603,7 @@ struct ContentView: View {
     }
 
     func addMapping() {
-        config.mappings.append(KeyMapping(name: "Nova tecla", keyCode: 0, action: .emoji))
+        config.mappings.append(KeyMapping(name: tr("mapping.new"), keyCode: 0, action: .emoji))
     }
 
     func delete(_ id: UUID) {
@@ -486,16 +612,16 @@ struct ContentView: View {
 
     func capture(_ id: UUID) {
         capturingID = id
-        message = "Aperte a tecla que deseja capturar…"
+        message = tr("message.capturePrompt")
         DispatchQueue.global(qos: .userInitiated).async {
             let code = runCaptureProcess()
             DispatchQueue.main.async {
                 if let idx = config.mappings.firstIndex(where: { $0.id == id }), let code {
                     config.mappings[idx].keyCode = code
-                    message = "Tecla capturada: keycode \(code)."
+                    message = trf("message.captured", String(code))
                     restartAgent()
                 } else {
-                    message = "Não consegui capturar. Confira Device Control/Data Access e Input Monitoring."
+                    message = tr("message.captureFailed")
                 }
                 capturingID = nil
             }
