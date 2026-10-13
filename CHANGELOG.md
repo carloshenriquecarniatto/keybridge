@@ -1,3 +1,9 @@
+## [1.1.3](https://github.com/carloshenriquecarniatto/keybridge/compare/v1.1.2...v1.1.3) (2026-10-13)
+
+### Bug Fixes
+
+* synthesize globe on modifier presses for tiling combos ([5f2cf40](https://github.com/carloshenriquecarniatto/keybridge/commit/5f2cf403c8b438edbf2492dbebe226f2f0e4d2c3))
+
 ## [1.1.2](https://github.com/carloshenriquecarniatto/keybridge/compare/v1.1.1...v1.1.2) (2026-10-13)
 
 ### Bug Fixes
