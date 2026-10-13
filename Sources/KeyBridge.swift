@@ -8,6 +8,8 @@ let appName = "KeyBridge"
 let bundleID = "local.keybridge.app"
 let configDir = NSString(string: "~/.config/keybridge").expandingTildeInPath
 let configPath = configDir + "/mappings.json"
+let captureRequestPath = configDir + "/capture.request"
+let captureResponsePath = configDir + "/capture.response"
 let logPath = NSString(string: "~/Library/Logs/keybridge.log").expandingTildeInPath
 let agentPlistPath = NSString(string: "~/Library/LaunchAgents/local.keybridge.agent.plist").expandingTildeInPath
 
@@ -21,17 +23,9 @@ let strings: [String: [String: String]] = [
         "action.emoji.title": "Emoji",
         "action.inputSource.title": "Input Source",
         "action.disabled.title": "Disabled",
-        "action.globeFn.subtitle": "Tap opens emoji; hold adds fn",
+        "action.globeFn.subtitle": "Tap opens emoji; hold activates macOS tiling",
         "action.emoji.subtitle": "Opens Emoji & Symbols",
         "action.inputSource.subtitle": "Sends Ctrl+Space",
-        "action.tileLeft.title": "Left",
-        "action.tileLeft.subtitle": "Moves the front window to the left half",
-        "action.tileRight.title": "Right",
-        "action.tileRight.subtitle": "Moves the front window to the right half",
-        "action.tileFill.title": "Fill",
-        "action.tileFill.subtitle": "Fills the screen with the front window",
-        "action.tileCenter.title": "Center",
-        "action.tileCenter.subtitle": "Centers the front window",
         "action.disabled.subtitle": "Ignores this key",
         "field.name": "Name",
         "field.action": "Action",
@@ -58,7 +52,7 @@ let strings: [String: [String: String]] = [
         "message.agentRemoved": "Agent removed.",
         "mapping.new": "New key",
         "message.capturePrompt": "Press the key you want to capture…",
-        "message.captured": "Captured key: keycode %@.",
+        "message.captured": "Captured key: %@.",
         "message.captureFailed": "Could not capture. Check Device Control/Data Access and Input Monitoring.",
     ],
     "es": [
@@ -66,17 +60,9 @@ let strings: [String: [String: String]] = [
         "action.emoji.title": "Emoji",
         "action.inputSource.title": "Cambiar idioma",
         "action.disabled.title": "Desactivado",
-        "action.globeFn.subtitle": "Tocar abre emoji; mantener añade fn",
+        "action.globeFn.subtitle": "Tocar abre emoji; mantener activa el tiling de macOS",
         "action.emoji.subtitle": "Abre Emoji y símbolos",
         "action.inputSource.subtitle": "Envía Ctrl+Espacio",
-        "action.tileLeft.title": "Izquierda",
-        "action.tileLeft.subtitle": "Mueve la ventana a la mitad izquierda",
-        "action.tileRight.title": "Derecha",
-        "action.tileRight.subtitle": "Mueve la ventana a la mitad derecha",
-        "action.tileFill.title": "Llenar",
-        "action.tileFill.subtitle": "Ocupa la pantalla con la ventana",
-        "action.tileCenter.title": "Centrar",
-        "action.tileCenter.subtitle": "Centra la ventana",
         "action.disabled.subtitle": "Ignora esta tecla",
         "field.name": "Nombre",
         "field.action": "Acción",
@@ -103,7 +89,7 @@ let strings: [String: [String: String]] = [
         "message.agentRemoved": "Agente eliminado.",
         "mapping.new": "Nueva tecla",
         "message.capturePrompt": "Pulsa la tecla que quieres capturar…",
-        "message.captured": "Tecla capturada: keycode %@.",
+        "message.captured": "Tecla capturada: %@.",
         "message.captureFailed": "No se pudo capturar. Revisa Device Control/Data Access e Input Monitoring.",
     ],
     "pt": [
@@ -111,17 +97,9 @@ let strings: [String: [String: String]] = [
         "action.emoji.title": "Emoji",
         "action.inputSource.title": "Trocar idioma",
         "action.disabled.title": "Desligado",
-        "action.globeFn.subtitle": "Toque abre emoji; segurar adiciona fn",
+        "action.globeFn.subtitle": "Toque abre emoji; segurar ativa o tiling do macOS",
         "action.emoji.subtitle": "Abre Emoji & Símbolos",
         "action.inputSource.subtitle": "Envia Ctrl+Espaço",
-        "action.tileLeft.title": "Esquerda",
-        "action.tileLeft.subtitle": "Move a janela para a metade esquerda",
-        "action.tileRight.title": "Direita",
-        "action.tileRight.subtitle": "Move a janela para a metade direita",
-        "action.tileFill.title": "Preencher",
-        "action.tileFill.subtitle": "Ocupa a tela com a janela",
-        "action.tileCenter.title": "Centralizar",
-        "action.tileCenter.subtitle": "Centraliza a janela",
         "action.disabled.subtitle": "Ignora esta tecla",
         "field.name": "Nome",
         "field.action": "Ação",
@@ -148,7 +126,7 @@ let strings: [String: [String: String]] = [
         "message.agentRemoved": "Agente removido.",
         "mapping.new": "Nova tecla",
         "message.capturePrompt": "Aperte a tecla que deseja capturar…",
-        "message.captured": "Tecla capturada: keycode %@.",
+        "message.captured": "Tecla capturada: %@.",
         "message.captureFailed": "Não consegui capturar. Confira Device Control/Data Access e Input Monitoring.",
     ],
 ]
@@ -165,10 +143,6 @@ enum KeyAction: String, Codable, CaseIterable, Identifiable {
     case globeFn
     case emoji
     case inputSource
-    case tileLeft
-    case tileRight
-    case tileFill
-    case tileCenter
     case disabled
 
     var id: String { rawValue }
@@ -177,10 +151,6 @@ enum KeyAction: String, Codable, CaseIterable, Identifiable {
         case .globeFn: return tr("action.globeFn.title")
         case .emoji: return tr("action.emoji.title")
         case .inputSource: return tr("action.inputSource.title")
-        case .tileLeft: return tr("action.tileLeft.title")
-        case .tileRight: return tr("action.tileRight.title")
-        case .tileFill: return tr("action.tileFill.title")
-        case .tileCenter: return tr("action.tileCenter.title")
         case .disabled: return tr("action.disabled.title")
         }
     }
@@ -189,10 +159,6 @@ enum KeyAction: String, Codable, CaseIterable, Identifiable {
         case .globeFn: return tr("action.globeFn.subtitle")
         case .emoji: return tr("action.emoji.subtitle")
         case .inputSource: return tr("action.inputSource.subtitle")
-        case .tileLeft: return tr("action.tileLeft.subtitle")
-        case .tileRight: return tr("action.tileRight.subtitle")
-        case .tileFill: return tr("action.tileFill.subtitle")
-        case .tileCenter: return tr("action.tileCenter.subtitle")
         case .disabled: return tr("action.disabled.subtitle")
         }
     }
@@ -201,10 +167,6 @@ enum KeyAction: String, Codable, CaseIterable, Identifiable {
         case .globeFn: return "globe"
         case .emoji: return "face.smiling"
         case .inputSource: return "character.cursor.ibeam"
-        case .tileLeft: return "arrow.left.square"
-        case .tileRight: return "arrow.right.square"
-        case .tileFill: return "square.fill"
-        case .tileCenter: return "crosshair"
         case .disabled: return "slash.circle"
         }
     }
@@ -329,9 +291,36 @@ func releaseSyntheticGlobe() {
 // acionados por eventos sintéticos de Globe — exigem o estado de hardware.
 // Então o KeyBridge move/redimensiona a janela diretamente via AX API.
 
-enum TileMode { case left, right, fill, center }
+enum TileMode { case left, right, top, bottom, fill, center, restore }
 
 enum WindowTiler {
+    // Guarda o frame original da última janela tileada por app — usado pelo
+    // Arrange "Restore" (macro + Ctrl + R).
+    private static var previousFrames: [pid_t: CGRect] = [:]
+
+    private static func readFrame(_ axWindow: AXUIElement) -> CGRect? {
+        var posRef: CFTypeRef?
+        var sizeRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(axWindow, kAXPositionAttribute as CFString, &posRef) == .success,
+              AXUIElementCopyAttributeValue(axWindow, kAXSizeAttribute as CFString, &sizeRef) == .success,
+              let p = posRef, let s = sizeRef else { return nil }
+        var pos = CGPoint()
+        var size = CGSize()
+        AXValueGetValue(p as! AXValue, .cgPoint, &pos)
+        AXValueGetValue(s as! AXValue, .cgSize, &size)
+        return CGRect(origin: pos, size: size) // coords AX (origem topo-esquerda)
+    }
+
+    private static func setFrame(_ axWindow: AXUIElement, _ target: CGRect) -> Bool {
+        // AX usa origem no topo-esquerda; Cocoa usa base-esquerda (primária = screens[0]).
+        var pt = CGPoint(x: target.minX, y: NSScreen.screens[0].frame.height - target.maxY)
+        var sz = CGSize(width: target.width, height: target.height)
+        guard let posVal = AXValueCreate(.cgPoint, &pt), let sizeVal = AXValueCreate(.cgSize, &sz) else { return false }
+        AXUIElementSetAttributeValue(axWindow, kAXSizeAttribute as CFString, sizeVal)
+        AXUIElementSetAttributeValue(axWindow, kAXPositionAttribute as CFString, posVal)
+        return true
+    }
+
     static func apply(_ mode: TileMode) -> Bool {
         guard let app = NSWorkspace.shared.frontmostApplication else { return false }
         let appEl = AXUIElementCreateApplication(app.processIdentifier)
@@ -340,37 +329,35 @@ enum WindowTiler {
               let window = windowRef else { return false }
         let axWindow = window as! AXUIElement
 
-        guard let screen = NSScreen.main else { return false }
-        let frame = screen.visibleFrame
-
-        var target: CGRect
-        if mode == .center {
-            var pos = CGPoint()
-            var size = CGSize()
-            var posRef: CFTypeRef?
-            var sizeRef: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(axWindow, kAXPositionAttribute as CFString, &posRef) == .success,
-                  AXUIElementCopyAttributeValue(axWindow, kAXSizeAttribute as CFString, &sizeRef) == .success,
-                  let p = posRef, let s = sizeRef else { return false }
-            AXValueGetValue(p as! AXValue, .cgPoint, &pos)
-            AXValueGetValue(s as! AXValue, .cgSize, &size)
-            target = CGRect(x: frame.midX - size.width / 2, y: frame.midY - size.height / 2,
-                            width: size.width, height: size.height)
-        } else {
-            switch mode {
-            case .left: target = CGRect(x: frame.minX, y: frame.minY, width: frame.width / 2, height: frame.height)
-            case .right: target = CGRect(x: frame.midX, y: frame.minY, width: frame.width / 2, height: frame.height)
-            default: target = frame
-            }
+        if mode == .restore {
+            guard let saved = previousFrames.removeValue(forKey: app.processIdentifier) else { return false }
+            return setFrame(axWindow, saved)
         }
 
-        // AX usa origem no topo-esquerda; Cocoa usa base-esquerda.
-        var pt = CGPoint(x: target.minX, y: NSScreen.screens[0].frame.height - target.maxY)
-        var sz = CGSize(width: target.width, height: target.height)
-        guard let posVal = AXValueCreate(.cgPoint, &pt), let sizeVal = AXValueCreate(.cgSize, &sz) else { return false }
-        AXUIElementSetAttributeValue(axWindow, kAXSizeAttribute as CFString, sizeVal)
-        AXUIElementSetAttributeValue(axWindow, kAXPositionAttribute as CFString, posVal)
-        return true
+        guard let screen = NSScreen.main else { return false }
+        let visible = screen.visibleFrame
+
+        // Guarda o frame atual antes do primeiro tiling, para o Restore desfazer.
+        if previousFrames[app.processIdentifier] == nil, let current = readFrame(axWindow) {
+            let cocoaY = NSScreen.screens[0].frame.height - current.origin.y - current.height
+            previousFrames[app.processIdentifier] = CGRect(x: current.minX, y: cocoaY,
+                                                           width: current.width, height: current.height)
+        }
+
+        let target: CGRect
+        switch mode {
+        case .left: target = CGRect(x: visible.minX, y: visible.minY, width: visible.width / 2, height: visible.height)
+        case .right: target = CGRect(x: visible.midX, y: visible.minY, width: visible.width / 2, height: visible.height)
+        case .top: target = CGRect(x: visible.minX, y: visible.minY, width: visible.width, height: visible.height / 2)
+        case .bottom: target = CGRect(x: visible.minX, y: visible.midY, width: visible.width, height: visible.height / 2)
+        case .fill: target = visible
+        case .center:
+            let size = readFrame(axWindow)?.size ?? CGSize(width: 800, height: 600)
+            target = CGRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2,
+                            width: size.width, height: size.height)
+        case .restore: return false // tratado acima
+        }
+        return setFrame(axWindow, target)
     }
 }
 
@@ -392,6 +379,8 @@ final class AgentState {
     var sawOtherKeyWhileHeld = false
     var globeSynthesized = false
     var loggedFirstFlaggedKey = false
+    var tilingArrow: Int64? = nil
+    var captureUntil: Date? = nil
     var lastConfigLoad = Date.distantPast
     var lastConfigCheck = Date.distantPast
 
@@ -400,6 +389,13 @@ final class AgentState {
         let now = Date()
         if !force, now.timeIntervalSince(lastConfigCheck) < 2.0 { return }
         lastConfigCheck = now
+
+        // Pedido de captura da GUI? (mesmo ciclo barato de 2s da config)
+        if FileManager.default.fileExists(atPath: captureRequestPath) {
+            if captureUntil == nil { captureUntil = now.addingTimeInterval(15) }
+        } else {
+            captureUntil = nil
+        }
 
         let attrs = try? FileManager.default.attributesOfItem(atPath: configPath)
         let modified = attrs?[.modificationDate] as? Date ?? Date.distantPast
@@ -437,6 +433,20 @@ let agentCallback: CGEventTapCallBack = { _, type, event, _ in
 
     let keycode = event.getIntegerValueField(.keyboardEventKeycode)
 
+    // Captura de tecla pedida pela GUI: consome a próxima tecla e responde.
+    if let until = agentState.captureUntil {
+        if Date() >= until {
+            agentState.captureUntil = nil
+            try? FileManager.default.removeItem(atPath: captureRequestPath)
+        } else if type == .keyDown {
+            agentState.captureUntil = nil
+            try? FileManager.default.removeItem(atPath: captureRequestPath)
+            try? String(keycode).write(toFile: captureResponsePath, atomically: true, encoding: .utf8)
+            log("captura via agente: keycode \(keycode)")
+            return nil // consome: a tecla não vaza para o app em foco
+        }
+    }
+
     // Watchdog: se o keyUp da macro se perder (bug de driver/G HUB), não deixa
     // o estado fn "preso" para sempre — isso faria TODO teclado se comportar
     // como se fn estivesse segurado (setas tileiam janelas, letras viram símbolos).
@@ -457,6 +467,38 @@ let agentCallback: CGEventTapCallBack = { _, type, event, _ in
             postGlobeState(down: true)
             log("Globe sintetizado ↓ (combo detectado)")
         }
+
+        // Tiling nativo: macro + Ctrl (+Shift) + seta imita o atalho de sistema
+        // Globe+Ctrl+Seta. O macOS 27 ignora Globe sintético nos symbolic hotkeys,
+        // então o KeyBridge move a janela ele próprio via AX e consome o evento.
+        // Halves: macro + Ctrl + seta. O macOS 27 não aplica o atalho de tiling
+        // para setas com Globe sintético (a tradução fn+seta → Home/End/Page
+        // captura o evento antes), então o KeyBridge executa via AX e consome.
+        // Arrange (F/C/R) NÃO é interceptado: funciona nativamente (confirmado).
+        let arrows: Set<Int64> = [123, 124, 125, 126]
+        if arrows.contains(keycode), event.flags.contains(CGEventFlags.maskControl) {
+            if type == .keyDown {
+                if agentState.tilingArrow == keycode { return nil } // auto-repeat: já executou
+                agentState.tilingArrow = keycode
+                let mode: TileMode
+                switch keycode {
+                case 123: mode = .left     // ← metade esquerda
+                case 124: mode = .right    // → metade direita
+                case 126: mode = .top      // ↑ metade superior
+                default:  mode = .bottom   // ↓ metade inferior
+                }
+                log("macro + Ctrl + seta \(keycode) → tiling (\(mode))")
+                DispatchQueue.global(qos: .userInitiated).async {
+                    if !WindowTiler.apply(mode) {
+                        log("tiling falhou (sem janela focada ou app sem suporte AX)")
+                    }
+                }
+            } else {
+                if agentState.tilingArrow == keycode { agentState.tilingArrow = nil }
+            }
+            return nil // consome o evento (sem scroll Home/End fantasma)
+        }
+
         if !agentState.loggedFirstFlaggedKey {
             agentState.loggedFirstFlaggedKey = true
             log("fn aplicado a key=\(keycode) (primeira do combo)")
@@ -504,22 +546,6 @@ let agentCallback: CGEventTapCallBack = { _, type, event, _ in
             DispatchQueue.global(qos: .userInitiated).async { postInputSource() }
         }
         return nil
-    case .tileLeft, .tileRight, .tileFill, .tileCenter:
-        if type == .keyUp {
-            let mode: TileMode
-            switch mapping.action {
-            case .tileLeft: mode = .left
-            case .tileRight: mode = .right
-            case .tileFill: mode = .fill
-            default: mode = .center
-            }
-            log("\(mapping.name) → \(mapping.action.title)")
-            DispatchQueue.global(qos: .userInitiated).async {
-                let ok = WindowTiler.apply(mode)
-                if !ok { log("tiling falhou (sem janela focada ou app sem suporte AX)") }
-            }
-        }
-        return nil
     case .disabled:
         return Unmanaged.passUnretained(event)
     }
@@ -545,43 +571,51 @@ func runAgent() -> Never {
     }
 }
 
-// MARK: - Capture one key
-
-final class CaptureBox { var captured: Int64? = nil }
-
-let captureCallback: CGEventTapCallBack = { _, type, event, userInfo in
-    guard type == .keyDown else { return Unmanaged.passUnretained(event) }
-    let box = Unmanaged<CaptureBox>.fromOpaque(userInfo!).takeUnretainedValue()
-    box.captured = event.getIntegerValueField(.keyboardEventKeycode)
-    CFRunLoopStop(CFRunLoopGetMain())
-    return Unmanaged.passUnretained(event)
-}
-
-func captureOneKey(timeout: Int) -> Int32 {
-    let box = CaptureBox()
-    let ptr = UnsafeMutableRawPointer(Unmanaged.passRetained(box).toOpaque())
-    defer { Unmanaged<CaptureBox>.fromOpaque(ptr).release() }
-    let mask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
-    guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .listenOnly, eventsOfInterest: mask, callback: captureCallback, userInfo: ptr) else {
-        fputs("ERROR permission\n", stderr)
-        return 2
-    }
-    let src = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-    CFRunLoopAddSource(CFRunLoopGetMain(), src, .commonModes)
-    DispatchQueue.main.asyncAfter(deadline: .now() + Double(timeout)) { CFRunLoopStop(CFRunLoopGetMain()) }
-    CFRunLoopRun()
-    if let code = box.captured {
-        print(code)
-        return 0
-    }
-    fputs("ERROR timeout\n", stderr)
-    return 1
-}
+// MARK: - Capture via agent
+// A GUI não cria event tap próprio (não precisa de permissão!): escreve
+// capture.request, o agente — que já tem Input Monitoring — captura a próxima
+// tecla, consome o evento e responde em capture.response.
 
 // MARK: - UI helpers
 
+// Agente roda como mini-bundle PRÓPRIO (KeyBridgeAgent.app) em Application
+// Support — identidade separada do app. LSUIElement: nunca aparece na Dock
+// (sem ícone, sem bounce), mas tem o ícone do KeyBridge nos pedidos de
+// permissão (TCC) e no Activity Monitor.
+let agentSupportDir = NSString(string: "~/Library/Application Support/KeyBridge").expandingTildeInPath
+var agentAppBundle: String { agentSupportDir + "/KeyBridgeAgent.app" }
+var agentBinaryPath: String { agentAppBundle + "/Contents/MacOS/KeyBridgeAgent" }
+
 func installAgent() -> Bool {
-    let exe = currentExecutablePath()
+    let fm = FileManager.default
+    // Monta o mini-bundle do agente a partir do app em execução
+    try? fm.removeItem(atPath: agentAppBundle)
+    let binDir = agentAppBundle + "/Contents/MacOS"
+    let resDir = agentAppBundle + "/Contents/Resources"
+    try? fm.createDirectory(atPath: binDir, withIntermediateDirectories: true)
+    try? fm.createDirectory(atPath: resDir, withIntermediateDirectories: true)
+    try? fm.copyItem(atPath: currentExecutablePath(), toPath: agentBinaryPath)
+    if let icon = Bundle.main.url(forResource: "KeyBridgeIcon", withExtension: "icns") {
+        try? fm.copyItem(at: icon, to: URL(fileURLWithPath: resDir + "/KeyBridgeIcon.icns"))
+    }
+    let appPlist = """
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+      <key>CFBundleDisplayName</key><string>KeyBridge Agent</string>
+      <key>CFBundleExecutable</key><string>KeyBridgeAgent</string>
+      <key>CFBundleIdentifier</key><string>local.keybridge.agent</string>
+      <key>CFBundleName</key><string>KeyBridgeAgent</string>
+      <key>CFBundlePackageType</key><string>APPL</string>
+      <key>CFBundleIconFile</key><string>KeyBridgeIcon</string>
+      <key>LSUIElement</key><true/>
+      <key>NSHighResolutionCapable</key><true/>
+    </dict>
+    </plist>
+    """
+    try? appPlist.write(toFile: agentAppBundle + "/Contents/Info.plist", atomically: true, encoding: .utf8)
+
     let plist = """
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -590,7 +624,7 @@ func installAgent() -> Bool {
       <key>Label</key><string>local.keybridge.agent</string>
       <key>ProgramArguments</key>
       <array>
-        <string>\(exe)</string>
+        <string>\(agentBinaryPath)</string>
         <string>--agent</string>
       </array>
       <key>RunAtLoad</key><true/>
@@ -608,33 +642,71 @@ func installAgent() -> Bool {
 func uninstallAgent() {
     _ = shell("/bin/launchctl", ["bootout", "gui/\(getuid())/local.keybridge.agent"])
     try? FileManager.default.removeItem(atPath: agentPlistPath)
+    try? FileManager.default.removeItem(atPath: agentSupportDir)
 }
 
 func restartAgent() {
-    if FileManager.default.fileExists(atPath: agentPlistPath) {
-        _ = shell("/bin/launchctl", ["kickstart", "-k", "gui/\(getuid())/local.keybridge.agent"])
-    } else {
-        _ = installAgent()
-    }
+    // Reinstala: remonta o bundle do agente com o binário atual e reinicia.
+    _ = installAgent()
 }
 
 func agentInstalled() -> Bool { FileManager.default.fileExists(atPath: agentPlistPath) }
 
-func runCaptureProcess() -> Int64? {
-    let p = Process()
-    p.executableURL = URL(fileURLWithPath: currentExecutablePath())
-    p.arguments = ["--capture", "10"]
-    let out = Pipe()
-    p.standardOutput = out
-    p.standardError = Pipe()
-    do { try p.run() } catch { return nil }
-    let data = out.fileHandleForReading.readDataToEndOfFile()
-    p.waitUntilExit()
-    let text = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-    return Int64(text)
+// MARK: - SwiftUI
+
+/// Nome legível da tecla a partir do virtual keycode do macOS (ex.: 113 → "F15").
+func keyName(_ code: Int64) -> String {
+    let names: [Int64: String] = [
+        // Letras (US)
+        0: "A", 1: "S", 2: "D", 3: "F", 4: "H", 5: "G", 6: "Z", 7: "X", 8: "C", 9: "V", 11: "B",
+        12: "Q", 13: "W", 14: "E", 15: "R", 16: "Y", 17: "T", 31: "O", 32: "U", 34: "I", 35: "P",
+        37: "L", 38: "J", 39: "'", 40: "K", 41: ";", 45: "N", 46: "M",
+        // Números e símbolos
+        18: "1", 19: "2", 20: "3", 21: "4", 22: "6", 23: "5", 24: "=", 25: "9", 26: "7",
+        27: "-", 28: "8", 29: "0", 30: "]", 33: "[", 42: "\\", 43: ",", 44: "/", 47: ".", 50: "`",
+        // Especiais
+        36: "Return", 48: "Tab", 49: "Space", 51: "Delete", 53: "Esc", 57: "Caps Lock",
+        55: "Cmd", 56: "Shift", 58: "Option", 59: "Ctrl", 60: "Right Shift", 61: "Right Option", 62: "Right Ctrl",
+        63: "Globe/fn", 72: "Vol +", 73: "Vol −", 74: "Mute",
+        // Setas
+        123: "←", 124: "→", 125: "↓", 126: "↑",
+        // Função
+        122: "F1", 120: "F2", 99: "F3", 118: "F4", 96: "F5", 97: "F6", 98: "F7", 100: "F8",
+        101: "F9", 109: "F10", 103: "F11", 111: "F12", 105: "F13", 107: "F14", 113: "F15",
+        106: "F16", 64: "F17", 79: "F18", 80: "F19", 90: "F20",
+        // Teclado numérico
+        65: "Pad .", 67: "Pad ×", 69: "Pad +", 71: "Pad ⌫", 75: "Pad /", 76: "Pad ⏎",
+        78: "Pad −", 81: "Pad =", 82: "Pad 0", 83: "Pad 1", 84: "Pad 2", 85: "Pad 3",
+        86: "Pad 4", 87: "Pad 5", 88: "Pad 6", 89: "Pad 7", 91: "Pad 8", 92: "Pad 9"
+    ]
+    return names[code] ?? "code \(code)"
 }
 
-// MARK: - SwiftUI
+// MARK: Liquid Glass (macOS 26+) com fallback para materiais
+
+extension View {
+    @ViewBuilder
+    func glassCard(in shape: some Shape, fallback: Material = .regularMaterial) -> some View {
+        if #available(macOS 26.0, *) {
+            self.glassEffect(.regular, in: shape)
+        } else {
+            self.background(fallback, in: shape)
+        }
+    }
+
+    @ViewBuilder
+    func glassButtonStyle(prominent: Bool = false) -> some View {
+        if #available(macOS 26.0, *) {
+            if prominent {
+                self.buttonStyle(.glassProminent)
+            } else {
+                self.buttonStyle(.glass)
+            }
+        } else {
+            self
+        }
+    }
+}
 
 struct Pill: View {
     let ok: Bool
@@ -645,7 +717,7 @@ struct Pill: View {
             Text(text).font(.caption)
         }
         .padding(.vertical, 5).padding(.horizontal, 10)
-        .background(.thinMaterial, in: Capsule())
+        .glassCard(in: Capsule(), fallback: .thinMaterial)
     }
 }
 
@@ -665,7 +737,7 @@ struct MappingRow: View {
                     TextField(tr("field.name"), text: $mapping.name)
                         .font(.headline)
                         .textFieldStyle(.plain)
-                    Text("code \(mapping.keyCode)")
+                    Text(keyName(mapping.keyCode))
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 7)
@@ -677,7 +749,7 @@ struct MappingRow: View {
                         Text(action.title).tag(action)
                     }
                 }
-                .pickerStyle(.menu)
+                .pickerStyle(.segmented)
                 Text(mapping.action.subtitle).font(.caption).foregroundStyle(.secondary)
             }
             Toggle("", isOn: $mapping.enabled).labelsHidden()
@@ -691,7 +763,7 @@ struct MappingRow: View {
             .menuStyle(.borderlessButton)
         }
         .padding(14)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .glassCard(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
@@ -745,7 +817,9 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
                 HStack {
                     Button(tr("button.permissions")) { openPermissions() }
+                        .glassButtonStyle()
                     Button(tr("button.configFolder")) { NSWorkspace.shared.open(URL(fileURLWithPath: configDir)) }
+                        .glassButtonStyle()
                     Spacer()
                 }
             }.padding(8)
@@ -758,6 +832,7 @@ struct ContentView: View {
                 Text(tr("section.mappings")).font(.title2.bold())
                 Spacer()
                 Button { addMapping() } label: { Label(tr("button.add"), systemImage: "plus") }
+                    .glassButtonStyle(prominent: true)
             }
             ForEach($config.mappings) { $mapping in
                 MappingRow(mapping: $mapping, onCapture: { capture(mapping.id) }, onDelete: { delete(mapping.id) })
@@ -775,8 +850,11 @@ struct ContentView: View {
                     Button(installed ? tr("button.reinstall") : tr("button.install")) {
                         installed = installAgent(); message = installed ? tr("message.agentInstalled") : tr("message.agentInstallFailed")
                     }
+                    .glassButtonStyle(prominent: true)
                     Button(tr("button.restart")) { restartAgent(); message = tr("message.agentRestarted") }
+                        .glassButtonStyle()
                     Button(tr("button.removeAgent")) { uninstallAgent(); installed = false; message = tr("message.agentRemoved") }
+                        .glassButtonStyle()
                     Spacer()
                 }
                 if !message.isEmpty { Text(message).font(.caption).foregroundStyle(.secondary) }
@@ -799,13 +877,26 @@ struct ContentView: View {
     func capture(_ id: UUID) {
         capturingID = id
         message = tr("message.capturePrompt")
+        try? FileManager.default.removeItem(atPath: captureResponsePath)
+        try? "".write(toFile: captureRequestPath, atomically: true, encoding: .utf8)
         DispatchQueue.global(qos: .userInitiated).async {
-            let code = runCaptureProcess()
+            let deadline = Date().addingTimeInterval(12)
+            var code: Int64? = nil
+            while Date() < deadline {
+                if let raw = try? String(contentsOfFile: captureResponsePath, encoding: .utf8),
+                   let c = Int64(raw.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                    code = c
+                    break
+                }
+                Thread.sleep(forTimeInterval: 0.15)
+            }
+            try? FileManager.default.removeItem(atPath: captureRequestPath)
+            try? FileManager.default.removeItem(atPath: captureResponsePath)
             DispatchQueue.main.async {
                 if let idx = config.mappings.firstIndex(where: { $0.id == id }), let code {
                     config.mappings[idx].keyCode = code
-                    message = trf("message.captured", String(code))
-                    restartAgent()
+                    message = trf("message.captured", keyName(code))
+                    // mappings.json é recarregado sozinho pelo agente (hot reload)
                 } else {
                     message = tr("message.captureFailed")
                 }
@@ -831,10 +922,8 @@ struct KeyBridgeApp: App {
 
 let args = CommandLine.arguments
 if args.contains("--agent") {
+    // Agente é um mini-bundle próprio fora do app — sem Dock, sem bounce.
     runAgent()
-} else if let i = args.firstIndex(of: "--capture") {
-    let timeout = (i + 1 < args.count) ? (Int(args[i + 1]) ?? 10) : 10
-    exit(captureOneKey(timeout: timeout))
 } else {
     KeyBridgeApp.main()
 }
