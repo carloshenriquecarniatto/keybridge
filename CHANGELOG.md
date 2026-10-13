@@ -1,3 +1,13 @@
+## [1.2.0](https://github.com/carloshenriquecarniatto/keybridge/compare/v1.1.3...v1.2.0) (2026-10-13)
+
+### Features
+
+* add native window tiling actions ([e61fad4](https://github.com/carloshenriquecarniatto/keybridge/commit/e61fad468cb1c2a3ae50ef7edddb455e64d30d7f))
+
+### Bug Fixes
+
+* correct accessibility API calls and localization strings for tiling actions ([7307595](https://github.com/carloshenriquecarniatto/keybridge/commit/7307595a5a5ec71e0bb9b547cdfdb0cf91fc5caa))
+
 ## [1.1.3](https://github.com/carloshenriquecarniatto/keybridge/compare/v1.1.2...v1.1.3) (2026-10-13)
 
 ### Bug Fixes
