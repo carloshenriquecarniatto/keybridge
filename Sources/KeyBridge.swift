@@ -187,16 +187,25 @@ struct KeyBridgeConfig: Codable {
 }
 
 func log(_ text: String) {
-    let line = "[\(Date())] \(text)\n"
-    if let fh = FileHandle(forWritingAtPath: logPath) {
-        defer { try? fh.close() }
-        fh.seekToEndOfFile()
-        fh.write(line.data(using: .utf8)!)
-    } else {
-        try? line.write(toFile: logPath, atomically: true, encoding: .utf8)
+    // Escrita assíncrona: o callback do event tap não pode bloquear em I/O
+    // (volume de home pode ser lento; I/O síncrono aqui atrasa TODO teclado do sistema).
+    logQueue.async {
+        let line = "[\(Date())] \(text)\n"
+        if let fh = FileHandle(forWritingAtPath: logPath) {
+            defer { try? fh.close() }
+            let end = fh.seekToEndOfFile()
+            if end > 1_000_000 {
+                fh.truncateFile(atOffset: 0) // rotação simples
+            } else {
+                fh.write(line.data(using: .utf8)!)
+            }
+        } else {
+            try? line.write(toFile: logPath, atomically: true, encoding: .utf8)
+        }
     }
-    print(text)
 }
+
+let logQueue = DispatchQueue(label: "local.keybridge.log", qos: .utility)
 
 func ensureConfigDir() {
     try? FileManager.default.createDirectory(atPath: configDir, withIntermediateDirectories: true)
@@ -267,18 +276,24 @@ func typeName(_ t: CGEventType) -> String {
 final class AgentState {
     var mappingsByKeyCode: [Int64: KeyMapping] = [:]
     var heldGlobeKey: Int64? = nil
+    var holdStart: Date? = nil
     var sawOtherKeyWhileHeld = false
     var lastConfigLoad = Date.distantPast
+    var lastConfigCheck = Date.distantPast
 
     func reloadIfNeeded(force: Bool = false) {
+        // Throttle: stat() a cada 2s no máximo (isto roda a cada tecla do sistema)
+        let now = Date()
+        if !force, now.timeIntervalSince(lastConfigCheck) < 2.0 { return }
+        lastConfigCheck = now
+
         let attrs = try? FileManager.default.attributesOfItem(atPath: configPath)
         let modified = attrs?[.modificationDate] as? Date ?? Date.distantPast
-        if force || modified > lastConfigLoad {
-            let cfg = loadConfig()
-            mappingsByKeyCode = Dictionary(uniqueKeysWithValues: cfg.mappings.filter { $0.enabled }.map { ($0.keyCode, $0) })
-            lastConfigLoad = Date()
-            log("config carregada: \(mappingsByKeyCode.keys.sorted())")
-        }
+        guard force || modified > lastConfigLoad else { return }
+        let cfg = loadConfig()
+        mappingsByKeyCode = Dictionary(uniqueKeysWithValues: cfg.mappings.filter { $0.enabled }.map { ($0.keyCode, $0) })
+        lastConfigLoad = Date()
+        log("config carregada: \(mappingsByKeyCode.keys.sorted())")
     }
 }
 
@@ -286,16 +301,37 @@ let agentState = AgentState()
 
 let agentCallback: CGEventTapCallBack = { _, type, event, _ in
     if isPostingSynthetic { return Unmanaged.passUnretained(event) }
+
+    // Modificadores (shift/ctrl/cmd) pressionados enquanto a macro está segurada
+    // também recebem a flag fn, para combos como Globe+Shift+Seta funcionarem.
+    if type == .flagsChanged {
+        if agentState.heldGlobeKey != nil {
+            event.flags = CGEventFlags(rawValue: event.flags.rawValue | CGEventFlags.maskSecondaryFn.rawValue)
+        }
+        return Unmanaged.passUnretained(event)
+    }
+
     guard type == .keyDown || type == .keyUp else { return Unmanaged.passUnretained(event) }
     agentState.reloadIfNeeded()
 
     let keycode = event.getIntegerValueField(.keyboardEventKeycode)
 
+    // Watchdog: se o keyUp da macro se perder (bug de driver/G HUB), não deixa
+    // o estado fn "preso" para sempre — isso faria TODO teclado se comportar
+    // como se fn estivesse segurado (setas tileiam janelas, letras viram símbolos).
+    if agentState.heldGlobeKey != nil, keycode != agentState.heldGlobeKey,
+       let start = agentState.holdStart, Date().timeIntervalSince(start) > 20 {
+        agentState.heldGlobeKey = nil
+        agentState.holdStart = nil
+        agentState.sawOtherKeyWhileHeld = false
+        log("watchdog: limpando estado fn preso (>20s sem keyUp da macro)")
+        return Unmanaged.passUnretained(event)
+    }
+
     if let held = agentState.heldGlobeKey, keycode != held {
         agentState.sawOtherKeyWhileHeld = true
         event.flags = CGEventFlags(rawValue: event.flags.rawValue | CGEventFlags.maskSecondaryFn.rawValue)
-        log("fn aplicado: key=\(keycode) por macro=\(held)")
-        return Unmanaged.passUnretained(event)
+        return Unmanaged.passUnretained(event) // sem log por evento (auto-repeat gera muitos)
     }
 
     guard let mapping = agentState.mappingsByKeyCode[keycode], mapping.action != .disabled else {
@@ -307,21 +343,22 @@ let agentCallback: CGEventTapCallBack = { _, type, event, _ in
         if type == .keyDown {
             if agentState.heldGlobeKey == nil {
                 agentState.heldGlobeKey = keycode
+                agentState.holdStart = Date()
                 agentState.sawOtherKeyWhileHeld = false
+                log("\(mapping.name) ↓ Globo/fn (keycode \(keycode)) — segure + setas para tiling")
             }
-            log("\(mapping.name) ↓ consumida como Globo/fn (keycode \(keycode))")
+            return nil // consome (inclui auto-repeats, silenciosos)
         } else {
-            let wasTap = !agentState.sawOtherKeyWhileHeld
+            let wasTap = (agentState.heldGlobeKey == keycode) && !agentState.sawOtherKeyWhileHeld
             agentState.heldGlobeKey = nil
+            agentState.holdStart = nil
             agentState.sawOtherKeyWhileHeld = false
             if wasTap {
                 log("\(mapping.name) toque → emoji")
                 DispatchQueue.global(qos: .userInitiated).async { postEmoji() }
-            } else {
-                log("\(mapping.name) solta após uso como fn")
             }
+            return nil
         }
-        return nil
     case .emoji:
         if type == .keyUp {
             log("\(mapping.name) → emoji")
@@ -341,7 +378,7 @@ let agentCallback: CGEventTapCallBack = { _, type, event, _ in
 
 func runAgent() -> Never {
     agentState.reloadIfNeeded(force: true)
-    let mask: CGEventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue)
+    let mask: CGEventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.flagsChanged.rawValue)
     var notified = false
     while true {
         if let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap, eventsOfInterest: mask, callback: agentCallback, userInfo: nil) {
