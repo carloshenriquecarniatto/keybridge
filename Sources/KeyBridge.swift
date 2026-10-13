@@ -25,13 +25,13 @@ let strings: [String: [String: String]] = [
         "action.emoji.subtitle": "Opens Emoji & Symbols",
         "action.inputSource.subtitle": "Sends Ctrl+Space",
         "action.tileLeft.title": "Left",
-+        "action.tileLeft.subtitle": "Moves the front window to the left half",
-+        "action.tileRight.title": "Right",
-+        "action.tileRight.subtitle": "Moves the front window to the right half",
-+        "action.tileFill.title": "Fill",
-+        "action.tileFill.subtitle": "Fills the screen with the front window",
-+        "action.tileCenter.title": "Center",
-+        "action.tileCenter.subtitle": "Centers the front window",
+        "action.tileLeft.subtitle": "Moves the front window to the left half",
+        "action.tileRight.title": "Right",
+        "action.tileRight.subtitle": "Moves the front window to the right half",
+        "action.tileFill.title": "Fill",
+        "action.tileFill.subtitle": "Fills the screen with the front window",
+        "action.tileCenter.title": "Center",
+        "action.tileCenter.subtitle": "Centers the front window",
         "action.disabled.subtitle": "Ignores this key",
         "field.name": "Name",
         "field.action": "Action",
@@ -336,7 +336,7 @@ enum WindowTiler {
         guard let app = NSWorkspace.shared.frontmostApplication else { return false }
         let appEl = AXUIElementCreateApplication(app.processIdentifier)
         var windowRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(appEl, kAXFocusedWindowAttribute as CFString, &windowRef, nil) == .success,
+        guard AXUIElementCopyAttributeValue(appEl, kAXFocusedWindowAttribute as CFString, &windowRef) == .success,
               let window = windowRef else { return false }
         let axWindow = window as! AXUIElement
 
@@ -349,8 +349,8 @@ enum WindowTiler {
             var size = CGSize()
             var posRef: CFTypeRef?
             var sizeRef: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(axWindow, kAXPositionAttribute as CFString, &posRef, nil) == .success,
-                  AXUIElementCopyAttributeValue(axWindow, kAXSizeAttribute as CFString, &sizeRef, nil) == .success,
+            guard AXUIElementCopyAttributeValue(axWindow, kAXPositionAttribute as CFString, &posRef) == .success,
+                  AXUIElementCopyAttributeValue(axWindow, kAXSizeAttribute as CFString, &sizeRef) == .success,
                   let p = posRef, let s = sizeRef else { return false }
             AXValueGetValue(p as! AXValue, .cgPoint, &pos)
             AXValueGetValue(s as! AXValue, .cgSize, &size)
